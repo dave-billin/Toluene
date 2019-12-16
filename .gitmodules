@@ -1,0 +1,8 @@
+[submodule "JUCE"]
+	path = JUCE
+	url = https://github.com/WeAreROLI/JUCE.git
+	branch = master
+[submodule "FRUT"]
+	path = FRUT
+	url = https://github.com/McMartin/FRUT.git
+	branch = master
