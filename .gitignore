@@ -1,2 +1,6 @@
 build/*
 **.swp
+
+# Eclipse files
+.project
+.settings
