@@ -1,6 +1,8 @@
 build/*
+TR-Edit/build
 **.swp
 
 # Eclipse files
 .project
+.cproject
 .settings

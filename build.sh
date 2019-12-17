@@ -37,26 +37,31 @@ function build_frut()
    )
 }
 
+# Translate a .jucer file into a CMakeLists.txt file in the same directory using FRUT
+# PARAM1 jucer_file   - Path of the .jucer file to translate
 function transcode_jucer()
 {
+   local jucer_file="${1}"
    echo "*** Transcoding Projucer files to CMake configuration using FRUT ***"
+   (cd $(dirname ${jucer_file})
    ${frut_prefix_dir}/FRUT/bin/Jucer2Reprojucer \
       --juce-modules ${_script_dir}/JUCE/modules \
-      ${_script_dir}/TR-Edit/TR-Edit.jucer \
+      ${jucer_file} \
       ${frut_prefix_dir}/FRUT/cmake/Reprojucer.cmake
+   )
    
 }
 
 
-mkdir -p ${_build_dir}
 build_projucer
 build_frut
-transcode_jucer
+transcode_jucer "${_script_dir}/TR-Edit/TR-Edit.jucer"
 
 # Configure and build the application
 app_path="${_script_dir}/TR-Edit"
 cd ${app_path}
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Debug
+pwd
+mkdir -p build && cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 cmake --build . -- -j 8
  
