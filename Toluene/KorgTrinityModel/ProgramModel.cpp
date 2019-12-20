@@ -1,0 +1,24 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file
+///
+/// @author Dave Billin
+///
+/// Copyright 2019 XS Noise Productions, Inc.
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include "ProgramModel.h"
+
+namespace KorgTrinity {
+
+ProgramModel::ProgramModel()
+{
+	// TODO Auto-generated constructor stub
+
+}
+
+ProgramModel::~ProgramModel()
+{
+	// TODO Auto-generated destructor stub
+}
+
+} /* namespace KorgTrinity */
