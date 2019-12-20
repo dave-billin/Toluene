@@ -1,0 +1,991 @@
+ Trinity V3 MIDI Implementation                                Revision 1.0 (Dec. 14 1998)
+
+ This document contains MIDI implementation information for Trinity V3 not covered in
+the Trinity Parameter Guide.
+ Since basic MIDI feature is same as Trinity with Solo Synthesizer, you can use MIDI
+Implementation section of the Trinity Parameter Guide by exchanging "Solo" related terms
+to "MOSS". But some of the feature is slightly changed/added to avoid conflict between
+two types of Trinity. Section -1- contains minor changes and additional MIDI message
+to accomplish this. Also, MOSS Program structure in "M" Bank is surely new issue.
+Section -2- contains this information.
+
+-1- MIDI Exclusive Message
+ 1.1 Minor Changes
+ 1.1.1 Program Parameter Dump (Function ID = 0x4C)
+   +--------------+-------------------------------------+
+   | Message Byte | Description                         |
+   +--------------+-------------------------------------+
+   | F0,42,3g,3B  | Common Header                       |
+   | 4C           | Program Parameter Dump              |
+   | 0000 0vvv[*] | Available Bank                      |
+   | 00kk 0bbb    | Kind, Bank                          |
+   | 0ppp pppp    | Program Number                      |
+   | 0xxx xxxx    | (Reserved)                          |
+   | 0ddd dddd    | Data                                |
+   |     ~        |  ~                                  |
+   | F7           | End Of Exclusive                    |
+   +--------------+-------------------------------------+
+   [*]vvv = 0 : Bank A+B           : Basic Trinity
+            1 : Bank A+B+C+D       : Trinity With Flash ROM
+            2 : Bank A+B+S1        : Trinity With Solo Synthesizer
+            3 : Bank A+B+C+D+S1+S2 : Trinity With Flash ROM And Solo Synthesizer
+            4 : Bank A+B+M1        : Trinity With MOSS Synthesizer(ADDITIONAL)
+            5 : Bank A+B+C+D+M1+M2 : Trinity With Flash ROM And MOSS Synthesizer(ADDITIONAL)
+
+ 1.1.2 All Data Dump (Function ID = 0x50)
+   +--------------+-------------------------------------+
+   | Message Byte | Description                         |
+   +--------------+-------------------------------------+
+   | F0,42,3g,3B  | Common Header                       |
+   | 50           | All Data Dump                       |
+   | 0000 0vvv[*] | Available Bank                      |
+   | 0xxx xxxx    | (Reserved)                          |
+   | 0sss ssss    | Size Of Sequence Data               |
+   |     ~        |  ~                                  |
+   | 0ddd dddd    | Data                                |
+   |     ~        |  ~                                  |
+   | F7           | End Of Exclusive                    |
+   +--------------+-------------------------------------+
+   [*]vvv = 0 : Bank A+B           : Basic Trinity
+            1 : Bank A+B+C+D       : Trinity With Flash ROM
+            2 : Bank A+B+S1        : Trinity With Solo Synthesizer
+            3 : Bank A+B+C+D+S1+S2 : Trinity With Flash ROM And Solo Synthesizer
+            4 : Bank A+B+M1        : Trinity With MOSS Synthesizer(ADDITIONAL)
+            5 : Bank A+B+C+D+M1+M2 : Trinity With Flash ROM And MOSS Synthesizer(ADDITIONAL)
+
+ 1.2 Additional Message
+ 1.2.1 Current MOSS Program Parameter Dump (Function ID = 0x6C)
+   +--------------+-------------------------------------+
+   | Message Byte | Description                         |
+   +--------------+-------------------------------------+
+   | F0,42,3g,3B  | Common Header                       |
+   | 6C           | Current MOSS Program Parameter Dump |
+   | 0000 00tt    | Program Type (Fixed to 2 for MOSS)  |
+   | 0ddd dddd    | Data                                |
+   |     ~        |  ~                                  |
+   | F7           | End Of Exclusive                    |
+   +--------------+-------------------------------------+
+   Receive:
+    -Always.
+    -After receiving this message, Trinity responds by transmitting 0x23(Data Load Completed)
+     or 0x24(Data Load Error).
+   Transmit:
+    -As a response for 0x10(Current Program Parameter Dump Request) if the current program is
+     set to the one in "M" Bank in Program Mode.
+    -When the current program is changed to the one in "M" Bank in Program Mode.
+
+-2- MOSS Program Parameter Structure
+ 2.1 Single Program Structure
+     In following chart,
+      Ofst  : Byte offset in the program dump data
+      PrmID : Hexadecimal parameter ID used in the parameter change message
+
++====+=====+===============================+============================+=========+=========+
+|Ofst|PrmID|      Parameter Name           |      Representation        |  Value  |  Size   |
++====+=====+===============================+============================+=========+=========+
+|    |     |[Program Common]                                                                |
+|0~15| --- |Program Name                   |                            |20H~7FH  |16       |
+|  16|3A,00|Category A                     |                            |0~15     |1(Bit0~3)|
+|    |3A,01|Category B                     |                            |0~15     |^(Bit4~7)|
+|  17| --- |reserved                       |                            |3(Fixed) |1(Bit0~1)|
+|    |3A,02|Hold                           |OFF/ON                      |0/1      |^(Bit3)  |
+|    |3A,03|Key Priority                   |LAST/LOW/HIGH               |0~2      |^(Bit4~5)|
+|    |3A,04|Voice Assign Mode              |MONO_MULTI/MONO_SINGLE/POLY |0~2      |^(Bit6~7)|
+|  18|3A,06|Retrigger Control Threshold    |1~127                       |1~127    |1        |
+|    |     |(Scale)                        |                            |         |         |
+|  19|3A,0A|Scale Key                      |C~B                         |0~11     |1(Bit0~3)|
+|    |3A,0B|Scale Type                     |[*1]                        |0~10     |^(Bit4~7)|
+|  20|3A,0C|Random Pitch Intensity         |0~99                        |0~99     |1        |
+|  21|3A,0D|SW1 Assign                     |[*1]                        |0~8      |1(Bit0~3)|
+|    |3A,0E|SW2 Assign                     |[*1]                        |0~8      |^(Bit4~7)|
+|  22|3A,05|Retrigger Controller           |[*2]                        |0~23     |1        |
+|    |     |(Unison)                       |                                      |         |
+|  23|3A,07|Unison Type                    |OFF/2/3/6                   |0~3      |1(Bit0~1)|
+|    | --- |reserved                       |                            |1(Fixed) |^(Bit2)  |
+|    |3A,08|Unison Mode                    |FIXED/DYNAMIC               |0/1      |^(Bit3)  |
+|  24|3A,09|Unison Detune                  |0~99[cent]                  |0~99     |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|   25Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[EG1]                                                                           |
+|  25|47,00|Start Level                    |-99~+99                     |-99~+99  |1        |
+|  26|47,01|Attack Time                    |0~99                        |0~99     |1        |
+|  27|47,02|Attack Level                   |-99~+99                     |-99~+99  |1        |
+|  28|47,03|Decay Time                     |0~99                        |0~99     |1        |
+|  29|47,04|Break Level                    |-99~+99                     |-99~+99  |1        |
+|  30|47,05|Slope Time                     |0~99                        |0~99     |1        |
+|  31|47,06|Sustain Level                  |-99~+99                     |-99~+99  |1        |
+|  32|47,07|Release Time                   |0~99                        |0~99     |1        |
+|  33|47,08|Release Level                  |-99~+99                     |-99~+99  |1        |
+|  34|47,09|EG Level Mod Source            |[*3]                        |0~33     |1        |
+|  35|47,0A|EG Level Mod Int.              |-99~+99                     |-99~+99  |1        |
+|  36|47,0B|EG Level Velocity Control      |-99~+99                     |-99~+99  |1        |
+|  37|47,0C|EG Time Mod Source             |[*3]                        |0~33     |1        |
+|  38|47,0D|EG Time Mod Int.               |-99~+99                     |-99~+99  |1        |
+|  39|47,0E|EG Node Time Mod Source        |[*3]                        |0~33     |1        |
+|  40|47,0F|Attack Time Mod Int.           |-99~+99                     |-99~+99  |1        |
+|  41|47,10|Decay Time Mod Int.            |-99~+99                     |-99~+99  |1        |
+|  42|47,11|Slope Time Mod Int.            |-99~+99                     |-99~+99  |1        |
+|  43|47,12|Release Time Mod Int.          |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[EG2]                                                                           |
+|  44|48,00|                                                                                |
+|   ~|  ~  |      Same As [EG1]                                                             |
+|  62|48,12|                                                                                |
++----+-----+--------------------------------------------------------------------------------+
+|    |     |[EG3]                                                                           |
+|  63|49,00|                                                                                |
+|   ~|  ~  |      Same As [EG1]                                                             |
+|  81|49,12|                                                                                |
++----+-----+--------------------------------------------------------------------------------+
+|    |     |[EG4]                                                                           |
+|  82|4A,00|                                                                                |
+|   ~|  ~  |      Same As [EG1]                                                             |
+| 100|4A,12|                                                                                |
++----+-----+----------------------------------------------------------------------+---------+
+|                                                                         Subtotal|   76Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[LFO1]                                                                          |
+| 101|4B,00|Wave Form                      |Triangle'0/Triangle'90/~[*4]|0~17     |1(Bit0~4)|
+|    |4B,01|Key Sync SW                    |OFF/byTIMBRE/byVOICE        |0/1/2    |^(Bit6~7)|
+| 102|4B,02|Frequency                      |0~199                       |0~199    |1        |
+| 103|4B,03|Frequency Mod1 Source          |[*3]                        |0~33     |1        |
+| 104|4B,04|Frequency Mod1 Int.            |-99~+99                     |-99~+99  |1        |
+| 105|4B,05|Frequency Mod2 Source          |[*3]                        |0~33     |1        |
+| 106|4B,06|Frequency Mod2 Int.            |-99~+99                     |-99~+99  |1        |
+| 107|4B,07|Fade In                        |0~99                        |0~99     |1        |
+| 108|4B,08|Amplitude Mod Source           |[*3]                        |0~33     |1        |
+| 109|4B,09|Amplitude Mod Int.             |-99~+99                     |-99~+99  |1        |
+| 110|4B,0A|Offset                         |-50~+50                     |-50~+50  |1        |
+| 111|4B,0B|MIDI Sync                      |OFF/ON                      |0/1      |1(Bit7)  |
+|    |4B,0C|MIDI Sync Base                 |semiquaver~semibrave        |0~7      |^(Bit4~6)|
+|    |4B,0D|MIDI Sync Time                 |1~16                        |0~15     |^(Bit0~3)|
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[LFO2]                                                                          |
+| 112|4C,00|                                                                                |
+|   ~|  ~  |       Same As [LFO1]                                                           |
+| 122|4C,0D|                                                                                |
++----+-----+--------------------------------------------------------------------------------+
+|    |     |[LFO3]                                                                          |
+| 123|4D,00|                                                                                |
+|   ~|  ~  |       Same As [LFO1]                                                           |
+| 133|4D,0D|                                                                                |
++----+-----+--------------------------------------------------------------------------------+
+|    |     |[LFO4]                                                                          |
+| 134|4E,00|                                                                                |
+|   ~|  ~  |       Same As [LFO1]                                                           |
+| 144|4E,0D|                                                                                |
++----+-----+----------------------------------------------------------------------+---------+
+|                                                                         Subtotal|   44Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[OSC Common]                                                                    |
+|    |     |(Pitch Bend)                   |                            |         |         |
+| 145|3B,04|Intensity(+)                   |-60~+24                     |-60~+24  |1        |
+| 146|3B,05|Intensity(-)                   |-60~+24                     |-60~+24  |1        |
+| 147|3B,06|Step(+)                        |0,/8,/4,/2,1~12             |0~15     |1(Bit0~3)|
+|    |3B,07|Step(-)                        |0,/8,/4,/2,1~12             |0~15     |^(Bit4~7)|
+|    |     |(Common Pitch Mod.)            |                            |         |         |
+| 148|3B,02|Common Pitch Mod Source        |[*3]                        |0~33     |1        |
+| 149|3B,03|Common Pitch Mod Int.          |-99~+99                     |-99~+99  |1        |
+|    |     |(Portamento)                   |                            |         |         |
+| 150|3B,08|Portamento SW                  |OFF/ON                      |0/1      |1(Bit0)  |
+|    |3B,09|Portamento Mode                |NORMAL/FINGERED             |0/1      |^(Bit1)  |
+| 151|3B,0A|Portamento Time                |0~99                        |0~99     |1        |
+| 152|3B,0B|Portamento Time Mod Source     |[*3]                        |0~33     |1        |
+| 153|3B,0C|Portamento Time Mod Int.       |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|    9Byte|
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[OSC1]                                                                          |
+| 154|3B,00|Oscillator Type                |Standard~Bowed String   [*5]|0~12     |1        |
+|    |     |(Pitch)                        |                            |         |         |
+| 155|3C,00|Octave                         |32'~4'                      |0~3      |1        |
+| 156|3C,01|Semi Tone                      |-12~+12                     |-12~+12  |1        |
+| 157|3C,02|Fine Tune                      |-50~+50cent                 |-50~+50  |1        |
+| 158|3C,03|Frequency Offset               |-10.0~+10.0Hz               |-100~+100|1        |
+|    |     |(Pitch Slope)                  |                            |         |         |
+| 159|3C,04|Center Key                     |C-1~G9                      |0~127    |1        |
+| 160|3C,05|Lower Slope                    |-1.00~+2.00                 |-50~+100 |1        |
+| 161|3C,06|Higher Slope                   |-1.00~+2.00                 |-50~+100 |1        |
+|    |     |(Pitch Modulation)             |                            |         |         |
+| 162|3C,07|Mod1 Source                    |[*3]                        |0~33     |1        |
+| 163|3C,08|Mod1 Int.                      |-99~+99                     |-99~+99  |1        |
+| 164|3C,09|Mod1 Int.Controller            |[*3]                        |0~33     |1        |
+| 165|3C,0A|Mod1 Int.Controller Int.       |-99~+99                     |-99~+99  |1        |
+| 166|3C,0B|Mod2 Source                    |[*3]                        |0~33     |1        |
+| 167|3C,0C|Mod2 Int.                      |-99~+99                     |-99~+99  |1        |
+| 168|     |OSC1 Setting                   |See 2.2 for details         |         |38       |
+|   ~|     |                               |                            |         |         |
+| 205|     |                               |                            |         |         |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[OSC2]                                                                          |
+| 206|3B,01|Oscillator Type                |Standard~Electric Piano [*5]|0~8      |1        |
+|    |     |(Pitch)                        |                            |         |         |
+| 207|3D,00|Octave                         |32'~4'                      |0~3      |1        |
+| 208|3D,01|Semi Tone                      |-12~+12                     |-12~+12  |1        |
+| 209|3D,02|Fine Tune                      |-50~+50cent                 |-50~+50  |1        |
+| 210|3D,03|Frequency Offset               |-10.0~+10.0Hz               |-100~+100|1        |
+|    |     |(Pitch Slope)                  |                            |         |         |
+| 211|3D,04|Center Key                     |C-1~G9                      |0~127    |1        |
+| 212|3D,05|Lower Slope                    |-1.00~+2.00                 |-50~+100 |1        |
+| 213|3D,06|Higher Slope                   |-1.00~+2.00                 |-50~+100 |1        |
+|    |     |(Pitch Modulation)             |                            |         |         |
+| 214|3D,07|Mod1 Source                    |[*3]                        |0~33     |1        |
+| 215|3D,08|Mod1 Int.                      |-99~+99                     |-99~+99  |1        |
+| 216|3D,09|Mod1 Int.Controller            |[*3]                        |0~33     |1        |
+| 217|3D,0A|Mod1 Int.Controller Int.       |-99~+99                     |-99~+99  |1        |
+| 218|3D,0B|Mod2 Source                    |[*3]                        |0~33     |1        |
+| 219|3D,0C|Mod2 Int.                      |-99~+99                     |-99~+99  |1        |
+| 220|     |OSC2 Setting                   |See 2.2 for details         |         |38       |
+|   ~|     |                               |                            |         |         |
+| 257|     |                               |                            |         |         |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|  104Byte|
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[SUB OSC]                                                                       |
+|    |     |(Pitch)                        |                            |         |         |
+| 258|3E,00|Octave                         |32'~4'                      |0~3      |1        |
+| 259|3E,01|Semi Tone                      |-12~+12                     |-12~+12  |1        |
+| 260|3E,02|Fine Tune                      |-50~+50cent                 |-50~+50  |1        |
+| 261|3E,03|Frequency Offset               |-10.0~+10.0Hz               |-100~+100|1        |
+|    |     |(Pitch Slope)                  |                            |         |         |
+| 262|3E,04|Center Key                     |C-1~G9                      |0~127    |1        |
+| 263|3E,05|Lower Slope                    |-1.00~+2.00                 |-50~+100 |1        |
+| 264|3E,06|Higher Slope                   |-1.00~+2.00                 |-50~+100 |1        |
+|    |     |(Pitch Modulation)             |                            |         |         |
+| 265|3E,07|Mod1 Source                    |[*3]                        |0~33     |1        |
+| 266|3E,08|Mod1 Int.                      |-99~+99                     |-99~+99  |1        |
+| 267|3E,09|Mod1 Int.Controller            |[*3]                        |0~33     |1        |
+| 268|3E,0A|Mod1 Int.Controller Int.       |-99~+99                     |-99~+99  |1        |
+| 269|3E,0B|Mod2 Source                    |[*3]                        |0~33     |1        |
+| 270|3E,0C|Mod2 Int.                      |-99~+99                     |-99~+99  |1        |
+| 271|3F,00|Wave Form                      |SAW/SQU/TRI/SIN             |0~3      |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|   14Byte|
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Noise Generator]                                                               |
+| 272|3F,01|Noise Filter Type              |THRU/LPF/HPF/BPF            |0~3      |1        |
+| 273|3F,02|Noise Filter Input Trim        |0~99                        |0~99     |1        |
+| 274|3F,03|Noise Filter Cutoff            |0~99                        |0~99     |1        |
+| 275|3F,04|Noise Filter Cutoff Mod1 Source|[*3]                        |0~33     |1        |
+| 276|3F,05|Noise Filter Cutoff Mod1 Int.  |-99~+99                     |-99~+99  |1        |
+| 277|3F,06|Noise Filter Cutoff Mod2 Source|[*3]                        |0~33     |1        |
+| 278|3F,07|Noise Filter Cutoff Mod2 Int.  |-99~+99                     |-99~+99  |1        |
+| 279|3F,08|Noise Filter Resonance         |0~99                        |0~99     |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|    8Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[Mixer]                                                                         |
+|    |     |(OSC1 Out1)                    |                            |         |         |
+| 280|40,00|Level                          |0~99                        |0~99     |1        |
+| 281|40,01|Level Mod Source               |[*3]                        |0~33     |1        |
+| 282|40,02|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(OSC1 Out2)                    |                            |         |         |
+| 283|40,03|Level                          |0~99                        |0~99     |1        |
+| 284|40,04|Level Mod Source               |[*3]                        |0~33     |1        |
+| 285|40,05|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(OSC2 Out1)                    |                            |         |         |
+| 286|40,06|Level                          |0~99                        |0~99     |1        |
+| 287|40,07|Level Mod Source               |[*3]                        |0~33     |1        |
+| 288|40,08|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(OSC2 Out2)                    |                            |         |         |
+| 289|40,09|Level                          |0~99                        |0~99     |1        |
+| 290|40,0A|Level Mod Source               |[*3]                        |0~33     |1        |
+| 291|40,0B|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(SUB OSC Out1)                 |                            |         |         |
+| 292|40,0C|Level                          |0~99                        |0~99     |1        |
+| 293|40,0D|Level Mod Source               |[*3]                        |0~33     |1        |
+| 294|40,0E|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(SUB OSC Out2)                 |                            |         |         |
+| 295|40,0F|Level                          |0~99                        |0~99     |1        |
+| 296|40,10|Level Mod Source               |[*3]                        |0~33     |1        |
+| 297|40,11|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(NOISE Out1)                   |                            |         |         |
+| 298|40,12|Level                          |0~99                        |0~99     |1        |
+| 299|40,13|Level Mod Source               |[*3]                        |0~33     |1        |
+| 300|40,14|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(NOISE Out2)                   |                            |         |         |
+| 301|40,15|Level                          |0~99                        |0~99     |1        |
+| 302|40,16|Level Mod Source               |[*3]                        |0~33     |1        |
+| 303|40,17|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(Feedback Out1)                |                            |         |         |
+| 304|40,18|Level                          |0~99                        |0~99     |1        |
+| 305|40,19|Level Mod Source               |[*3]                        |0~33     |1        |
+| 306|40,1A|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |(Feedback Out2)                |                            |         |         |
+| 307|40,1B|Level                          |0~99                        |0~99     |1        |
+| 308|40,1C|Level Mod Source               |[*3]                        |0~33     |1        |
+| 309|40,1D|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|    |     |                               |                            |         |         |
+| 310| --- |reserved                       |                            |15(Fixed)|1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|   31Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[Filter]                                                                        |
+| 311|41,00|Filter Routing                 |SERI1/SERI2/PARA            |0/1/2    |1(Bit0~1)|
+|    |41,01|Filter2 Link Switch            |OFF/ON                      |0/1      |^(Bit2)  |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Filter 1]                                                                      |
+| 312|41,02|Filter Type                    |LPF/HPF/BPF/BRF/2BPF        |1~5      |1        |
+| 313|41,03|Input Trim                     |0~99                        |0~99     |1        |
+| 314|41,04|Cutoff Frequency               |0~99                        |0~99     |1        |
+|    |     |(Cutoff Keyboard Track)        |                            |         |         |
+| 315|41,05|Low Key                        |C-1~G9                      |0~127    |1        |
+| 316|41,06|High Key                       |C-1~G9                      |0~127    |1        |
+| 317|41,07|Lower Intensity                |-99~+99                     |-99~+99  |1        |
+| 318|41,08|Higher Intensity               |-99~+99                     |-99~+99  |1        |
+|    |     |(Cutoff Modulation)            |                            |         |         |
+| 319|41,09|Cutoff Frequency Mod EG        |EG1~EG4/A.EG                |1~5      |1        |
+| 320|41,0A|Cutoff Frequency Mod EG Int.   |-99~+99                     |-99~+99  |1        |
+| 321|41,0B|Cutoff Frequency Mod1 Source   |[*3]                        |0~33     |1        |
+| 322|41,0C|Cutoff Frequency Mod1 Int.     |-99~+99                     |-99~+99  |1        |
+| 323|41,0D|Cutoff Frequency Mod2 Source   |[*3]                        |0~33     |1        |
+| 324|41,0E|Cutoff Frequency Mod2 Int.     |-99~+99                     |-99~+99  |1        |
+|    |     |(Resonance)                    |                            |         |         |
+| 325|41,0F|Resonance                      |0~99                        |0~99     |1        |
+| 326|41,10|Resonance Mod Source           |[*3]                        |0~33     |1        |
+| 327|41,11|Resonance Mod Int.             |-99~+99                     |-99~+99  |1        |
+|    |     |(Filter-B)                     |                            |         |         |
+| 328|43,00|Input Trim                     |0~99                        |0~99     |1        |
+| 329|43,01|Cutoff Frequency               |0~99                        |0~99     |1        |
+|    |     |(Cutoff-B Keyboard Track)      |                            |         |         |
+| 330|43,02|Low Key                        |C-1~G9                      |0~127    |1        |
+| 331|43,03|High Key                       |C-1~G9                      |0~127    |1        |
+| 332|43,04|Lower Intensity                |-99~+99                     |-99~+99  |1        |
+| 333|43,05|Higher Intensity               |-99~+99                     |-99~+99  |1        |
+|    |     |(Cutoff-B Modulation)          |                            |         |         |
+| 334|43,06|Cutoff Frequency Mod EG Int.   |-99~+99                     |-99~+99  |1        |
+| 335|43,07|Cutoff Frequency Mod1 Int.     |-99~+99                     |-99~+99  |1        |
+| 336|43,08|Cutoff Frequency Mod2 Int.     |-99~+99                     |-99~+99  |1        |
+|    |     |(Resonance-B)                  |                            |         |         |
+| 337|43,09|Resonance                      |0~99                        |0~99     |1        |
+| 338|43,0A|Resonance Mod Int.             |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Filter 2]                                                                      |
+| 339|42,02|Filter Type                    |LPF/HPF/BPF/BRF/2BPF        |1~5      |1        |
+| 340|42,03|Input Trim                     |0~99                        |0~99     |1        |
+| 341|42,04|Cutoff Frequency               |0~99                        |0~99     |1        |
+|    |     |(Cutoff Keyboard Track)        |                            |         |         |
+| 342|42,05|Low Key                        |C-1~G9                      |0~127    |1        |
+| 343|42,06|High Key                       |C-1~G9                      |0~127    |1        |
+| 344|42,07|Lower Intensity                |-99~+99                     |-99~+99  |1        |
+| 345|42,08|Higher Intensity               |-99~+99                     |-99~+99  |1        |
+|    |     |(Cutoff Modulation)            |                            |         |         |
+| 346|42,09|Cutoff Frequency Mod EG        |EG1~EG4/A.EG                |1~5      |1        |
+| 347|42,0A|Cutoff Frequency Mod EG Int.   |-99~+99                     |-99~+99  |1        |
+| 348|42,0B|Cutoff Frequency Mod1 Source   |[*3]                        |0~33     |1        |
+| 349|42,0C|Cutoff Frequency Mod1 Int.     |-99~+99                     |-99~+99  |1        |
+| 350|42,0D|Cutoff Frequency Mod2 Source   |[*3]                        |0~33     |1        |
+| 351|42,0E|Cutoff Frequency Mod2 Int.     |-99~+99                     |-99~+99  |1        |
+|    |     |(Resonance)                    |                            |         |         |
+| 352|42,0F|Resonance                      |0~99                        |0~99     |1        |
+| 353|42,10|Resonance Mod Source           |[*3]                        |0~33     |1        |
+| 354|42,11|Resonance Mod Int.             |-99~+99                     |-99~+99  |1        |
+|    |     |(Filter-B)                     |                            |         |         |
+| 355|44,00|Input Trim                     |0~99                        |0~99     |1        |
+| 356|44,01|Cutoff Frequency               |0~99                        |0~99     |1        |
+|    |     |(Cutoff-B Keyboard Track)      |                            |         |         |
+| 357|44,02|Low Key                        |C-1~G9                      |0~127    |1        |
+| 358|44,03|High Key                       |C-1~G9                      |0~127    |1        |
+| 359|44,04|Lower Intensity                |-99~+99                     |-99~+99  |1        |
+| 360|44,05|Higher Intensity               |-99~+99                     |-99~+99  |1        |
+|    |     |(Cutoff-B Modulation)          |                            |         |         |
+| 361|44,06|Cutoff Frequency Mod EG Int.   |-99~+99                     |-99~+99  |1        |
+| 362|44,07|Cutoff Frequency Mod1 Int.     |-99~+99                     |-99~+99  |1        |
+| 363|44,08|Cutoff Frequency Mod2 Int.     |-99~+99                     |-99~+99  |1        |
+|    |     |(Resonance-B)                  |                            |         |         |
+| 364|44,09|Resonance                      |0~99                        |0~99     |1        |
+| 365|44,0A|Resonance Mod Int.             |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |                                     |                              Subtotal|   55Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[Amplitude]                                                                     |
+|    |     |[Amp 1]                        |                            |         |         |
+| 366|45,00|Amplitude                      |0~99                        |0~99     |1        |
+|    |     |(Amp Keyboard Track)           |                            |         |         |
+| 367|45,01|Low Key                        |C-1~G9                      |0~127    |1        |
+| 368|45,02|High Key                       |C-1~G9                      |0~127    |1        |
+| 369|45,03|Lower Int.                     |-99~+99                     |-99~+99  |1        |
+| 370|45,04|Higher Int.                    |-99~+99                     |-99~+99  |1        |
+|    |     |(Amp Modulation)               |                            |         |         |
+| 371|45,05|Amplitude Mod EG               |EG1~EG4/A.EG                |1~5      |1        |
+| 372| --- |reserved                       |                            |99(Fixed)|1        |
+| 373|45,06|Amplitude Mod Source           |[*3]                        |0~33     |1        |
+| 374|45,07|Amplitude Mod Int.             |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Amp 2]                                                                         |
+| 375|45,08|Amplitude                      |0~99                        |0~99     |1        |
+|    |     |(Amp Keyboard Track)           |                            |         |         |
+| 376|45,09|Low Key                        |C-1~G9                      |0~127    |1        |
+| 377|45,0A|High Key                       |C-1~G9                      |0~127    |1        |
+| 378|45,0B|Lower Int.                     |-99~+99                     |-99~+99  |1        |
+| 379|45,0C|Higher Int.                    |-99~+99                     |-99~+99  |1        |
+|    |     |(Amp Modulation)               |                            |         |         |
+| 380|45,0D|Amplitude Mod EG               |EG1~EG4/A.EG                |1~5      |1        |
+| 381| --- |reserved                       |                            |99(Fixed)|1        |
+| 382|45,0E|Amplitude Mod Source           |[*3]                        |0~33     |1        |
+| 383|45,0F|Amplitude Mod Int.             |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Amp EG]                                                                        |
+| 384| --- |reserved                       |                            |0(Fixed) |1        |
+| 385|46,00|Attack Time                    |0~99                        |0~99     |1        |
+| 386|46,01|Attack Level                   |0~99                        |0~99     |1        |
+| 387|46,02|Decay Time                     |0~99                        |0~99     |1        |
+| 388|46,03|Break Level                    |0~99                        |0~99     |1        |
+| 389|46,04|Slope Time                     |0~99                        |0~99     |1        |
+| 390|46,05|Sustain Level                  |0~99                        |0~99     |1        |
+| 391|46,06|Release Time                   |0~99                        |0~99     |1        |
+| 392| --- |reserved                       |                            |0(Fixed) |1        |
+| 393|46,07|EG Level Mod Source            |[*3]                        |0~33     |1        |
+| 394|46,08|EG Level Mod Int.              |-99~+99                     |-99~+99  |1        |
+| 395|46,09|EG Level Velocity Control      |-99~+99                     |-99~+99  |1        |
+| 396|46,0A|EG Time Mod Source             |[*3]                        |0~33     |1        |
+| 397|46,0B|EG Time Mod Int.               |-99~+99                     |-99~+99  |1        |
+| 398|46,0C|EG Node Time Mod Source        |[*3]                        |0~33     |1        |
+| 399|46,0D|Attack Time Mod Int.           |-99~+99                     |-99~+99  |1        |
+| 400|46,0E|Decay Time Mod Int.            |-99~+99                     |-99~+99  |1        |
+| 401|46,0F|Slope Time Mod Int.            |-99~+99                     |-99~+99  |1        |
+| 402|46,10|Release Time Mod Int.          |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|   37Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[Output]                                                                        |
+| 403|45,10|Panpot                         |OFF,L000~R127               |-1,0~127 |1        |
+| 404|45,11|Panpot Mod Source              |[*3]                        |0~33     |1        |
+| 405|45,12|Panpot Mod Int.                |-99~+99                     |-99~+99  |1        |
+| 406|45,13|Output Level                   |0~127                       |0~127    |1        |
+| 407|45,14|Send1                          |0~127                       |0~127    |1        |
+| 408|45,15|Send2                          |0~127                       |0~127    |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|    6Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[Tempo]                                                                         |
+| 409|4B,0E|Tempo For LFO MIDI Sync        |40~240                      |40~240   |1        |
+| 410| --- |reserved                       |                            |         |5        |
+|   ~|  ~  |                               |                            |         |         |
+| 414| --- |                               |                            |         |         |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|    6Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[Insert Effect1]                                                                |
+| 415|14,00|Effect Parameters              |                            |         |16       |
+|   ~|  ~  | (Depend On Type)              |                            |         |         |
+| 430|14,xx|                               |                            |         |         |
+| 431|5C,06|Type                           |(See Trinity Effect Guide)  |0~x      |1(Bit0~5)|
+|    |5C,03|Switch                         |OFF/ON                      |0/1      |^(Bit6)  |
+|    | --- |reserved                       |                            |         |^(Bit7)  |
+| 432|5C,00|Size                           |0/1/2/4                     |0~3      |1(Bit0~1)|
+|    | --- |reserved                       |                            |         |^(Bit2~7)|
+| 433| --- |reserved                       |                            |         |4        |
+|   ~|  ~  |                               |                            |         |         |
+| 436| --- |                               |                            |         |         |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Insert Effect2]                                                                |
+| 437|15,00|Effect Parameters              |                            |         |16       |
+|   ~|  ~  | (Depend On Type)              |                            |         |         |
+| 452|15,xx|                               |                            |         |         |
+| 453|5C,07|Type                           |(See Trinity Effect Guide)  |0~x      |1(Bit0~5)|
+|    |5C,04|Switch                         |OFF/ON                      |0/1      |^(Bit6)  |
+|    | --- |reserved                       |                            |         |^(Bit7)  |
+| 454|5C,01|Size                           |0/1/2/4                     |0~3      |1(Bit0~1)|
+|    | --- |reserved                       |                            |         |^(Bit2~7)|
+| 455| --- |reserved                       |                            |         |4        |
+|   ~|  ~  |                               |                            |         |         |
+| 458| --- |                               |                            |         |         |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Insert Effect3]                                                                |
+| 459|16,00|Effect Parameters              |                            |         |16       |
+|   ~|  ~  | (Depend On Type)              |                            |         |         |
+| 474|16,xx|                               |                            |         |         |
+| 475|5C,08|Type                           |(See Trinity Effect Guide)  |0~x      |1(Bit0~5)|
+|    |5C,05|Switch                         |OFF/ON                      |0/1      |^(Bit6)  |
+|    | --- |reserved                       |                            |         |^(Bit7)  |
+| 476|5C,02|Size                           |0/1/2/4                     |0~3      |1(Bit0~1)|
+|    | --- |reserved                       |                            |         |^(Bit2~7)|
+| 477|5C,0B|Pan                            |OFF,L000~R127               |-1,0~127 |1        |
+| 478|5C,0E|Width                          |0~127                       |0~127    |1        |
+| 479|5C,11|Send1                          |0~127                       |0~127    |1        |
+| 480|5C,14|Send2                          |0~127                       |0~127    |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|   66Byte|
++====+=====+===============================+============================+=========+=========+
+|    |     |[Master Effect1(Modulation)]                                                    |
+| 481|19,00|Effect Parameters              |                            |         |16       |
+|   ~|  ~  | (Depend On Type)              |                            |         |         |
+| 496|19,xx|                               |                            |         |         |
+| 497|5D,03|Type                           |(See Trinity Effect Guide)  |0~x      |1(Bit0~5)|
+|    |5D,01|Switch                         |OFF/ON                      |0/1      |^(Bit6)  |
+|    |5D,00|Cascade To Master Effect2      |OFF/ON                      |0/1      |^(Bit7)  |
+| 498|5D,05|Pan                            |OFF,L,99:01~01:99,R         |-1,0~100 |1        |
+| 499|5D,07|Return                         |0~127                       |0~127    |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Master Effect2(Reverb/Delay)]                                                  |
+| 500|1A,00|Effect Parameters              |                            |         |16       |
+|   ~|  ~  | (Depend On Type)              |                            |         |         |
+| 515|1A,xx|                               |                            |         |         |
+| 516|5D,04|Type                           |(See Trinity Effect Guide)  |0~x      |1(Bit0~5)|
+|    |5D,02|Switch                         |OFF/ON                      |0/1      |^(Bit6)  |
+|    | --- |reserved                       |                            |         |^(Bit7)  |
+| 517|5D,06|Pan                            |OFF,L,99:01~01:99,R         |-1,0~100 |1        |
+| 518|5D,08|Return                         |0~127                       |0~127    |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Master EQ]                                                                     |
+| 519|5D,09|Low Gain                       |-18.0~+18.0                 |-36~+36  |1        |
+| 520|5D,0A|High Gain                      |-18.0~+18.0                 |-36~+36  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|                                                                         Subtotal|   40Byte|
++=================================================================================+=========+
+|                                                                            Total|  521Byte|
++=================================================================================+=========+
+
+
+ 2.2 Oscillator Parameters in OSC1/2 Setting
+     In following chart,
+      Ofst  : Byte offset from OSC1/2 Setting
+      PrmID : Parameter ID used in the parameter change message. Following chart shows the ID
+              when each OSC is placed on OSC1. The ID for OSC2 starts continuously from the
+              end of each OSC parameter(e.g. The ID for "Wave" parameter of the Standard OSC
+              is 4F,16 when it is placed to OSC2).
+
++====+=====+===============================+============================+=========+=========+
+|Ofst|PrmID|      Parameter Name           |      Representation        |  Value  |  Size   |
++====+=====+===============================+============================+=========+=========+
+|    |     |[Standard OSC]                                                                  |
+|   0|4F,00|Wave                           |SAW/PULSE                   |0/1      |1        |
+|   1|4F,01|Wave Edge                      |0~99                        |0~99     |1        |
+|   2|4F,02|Wave Level                     |0~99                        |0~99     |1        |
+|   3|4F,03|Triangle Level                 |0~99                        |0~99     |1        |
+|   4|4F,04|Sine Level                     |0~99                        |0~99     |1        |
+|   5|4F,05|Triangle Phase Shift           |-99~+99                     |-99~+99  |1        |
+|   6|4F,06|Wave Form                      |-99~+99                     |-99~+99  |1        |
+|   7|4F,07|Wave Form Mod LFO              |LFO1~LFO4                   |6~9      |1        |
+|   8|4F,08|Wave Form Mod LFO Int.         |-99~+99                     |-99~+99  |1        |
+|   9|4F,09|Wave Form Mod Source           |[*3]                        |0~33     |1        |
+|  10|4F,0A|Wave Form Mod Int.             |-99~+99                     |-99~+99  |1        |
+|    |     |(Wave Shape)                   |                            |         |         |
+|  11|4F,0B|Wave Shape Input Level         |0~99                        |0~99     |1        |
+|  12|4F,0C|Wave Shape Input Lvl Mod Source|[*3]                        |0~33     |1        |
+|  13|4F,0D|Wave Shape Input Lvl Mod Int   |-99~+99                     |-99~+99  |1        |
+|  14|4F,0E|Wave Shape Offset              |-99~+99                     |-99~+99  |1        |
+|  15|4F,0F|Wave Shape Table               |CLIP/RESO                   |0/1      |1        |
+|  16|4F,10|Wave Shape                     |0~99                        |0~99     |1        |
+|  17|4F,11|Wave Shape Mod Source          |[*3]                        |0~33     |1        |
+|  18|4F,12|Wave Shape Mod Int.            |-99~+99                     |-99~+99  |1        |
+|  19|4F,13|Wave Shape Balance             |0~99                        |0~99     |1        |
+|  20|4F,14|Wave Shape Balance Mod Source  |[*3]                        |0~33     |1        |
+|  21|4F,15|Wave Shape Balance Mod Int.    |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Comb Filter OSC]                                                               |
+|   0|50,00|Input Select                   |SC1+Noise/SubOSC+Noise/     |0~5      |1        |
+|    |     |                               |Filter1+Noise/Filtyer2+Noise|         |         |
+|    |     |                               |/Pulse Noise/Impulse        |         |         |
+|   1|50,01|Input Wave Level               |0~99                        |0~99     |1        |
+|   2|50,02|Noise Level                    |0~99                        |0~99     |1        |
+|   3|50,03|Width                          |0~99                        |0~99     |1        |
+|   4|50,04|Input Level Mod Source         |[*3]                        |0~33     |1        |
+|   5|50,05|Input Level Mod Int.           |-99~+99                     |-99~+99  |1        |
+|   6|50,06|Comb Filter Feedback           |0~99                        |0~99     |1        |
+|   7|50,07|Feedback Mod1 Source           |[*3]                        |0~33     |1        |
+|   8|50,08|Feedback Mod1 Int.             |-99~+99                     |-99~+99  |1        |
+|   9|50,09|Feedback Mod2 Source           |[*3]                        |0~33     |1        |
+|  10|50,0A|Feedback Mod2 Int.             |-99~+99                     |-99~+99  |1        |
+|  11|50,0B|High Damp                      |0~99                        |0~99     |1        |
+|  12|50,0C|High Damp Mod Source           |[*3]                        |0~33     |1        |
+|  13|50,0D|High Damp Mod Int.             |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[VPM OSC]                                                                       |
+|    |     |(Carrier)                      |                            |         |         |
+|   0|51,00|Wave                           |SAW/SQU/TRI/SIN             |0/1/2/3  |1        |
+|   1|51,01|Level                          |0~99                        |0~99     |1        |
+|   2|51,02|Level Mod1 Source              |[*3]                        |0~33     |1        |
+|   3|51,03|Level Mod1 Int.                |-99~+99                     |-99~+99  |1        |
+|   4|51,04|Level Mod2 Source              |[*3]                        |0~33     |1        |
+|   5|51,05|Level Mod2 Int.                |-99~+99                     |-99~+99  |1        |
+|   6|51,06|Wave Shape                     |0~99                        |0~99     |1        |
+|   7|51,07|Wave Shape Mod1 Source         |[*3]                        |0~33     |1        |
+|   8|51,08|Wave Shape Mod1 Int.           |-99~+99                     |-99~+99  |1        |
+|   9|51,09|Wave Shape Mod2 Source         |[*3]                        |0~33     |1        |
+|  10|51,0A|Wave Shape Mod2 Int.           |-99~+99                     |-99~+99  |1        |
+|  11|51,0B|Wave Shape Type                |1/2                         |0/1      |1        |
+|  12|51,0C|Feedback                       |0~99                        |0~99     |1        |
+|    |     |(Modulator)                    |                            |         |         |
+|  13|51,0D|Frequency Coarse               |0.5/1~16                    |0~16     |1        |
+|  14|51,0E|Frequency Fine                 |-50~+50                     |-50~+50  |1        |
+|  15|51,0F|Frequency Mod1 Source          |[*3]                        |0~33     |1        |
+|  16|51,10|Frequency Mod1 Int.            |-99~+99                     |-99~+99  |1        |
+|  17|51,11|Frequency Mod2 Source          |[*3]                        |0~33     |1        |
+|  18|51,12|Frequency Mod2 Int.            |-99~+99                     |-99~+99  |1        |
+|  19|51,13|Wave                           |SAW/SQU/TRI/SIN/OSC1(2)     |0~7      |1        |
+|    |     |                               |/Sub OSC/Filter1/Filter2    |         |         |
+|  20|51,14|Level                          |0~99                        |0~99     |1        |
+|  21|51,15|Level Mod.1 Source             |[*3]                        |0~33     |1        |
+|  22|51,16|Level Mod.1 Intensity          |-99~+99                     |-99~+99  |1        |
+|  23|51,17|Level Mod.2 Source             |[*3]                        |0~33     |1        |
+|  24|51,18|Level Mod.2 Intensity          |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Resonance OSC]                                                                 |
+|   0|52,00|Input Select                   |OSC1(2)/Sub OSC/Noise       |0~4      |1        |
+|    |     |                               |/Filter1/Filter2            |         |         |
+|   1|52,01|Input Level                    |0~99                        |0~99     |1        |
+|   2|52,02|Input Level Mod1 Source        |[*3]                        |0~33     |1        |
+|   3|52,03|Input Level Mod1 Int.          |-99~+99                     |-99~+99  |1        |
+|   4|52,04|Input Level Mod2 Source        |[*3]                        |0~33     |1        |
+|   5|52,05|Input Level Mod2 Int.          |-99~+99                     |-99~+99  |1        |
+|    |     |(BPF1)                         |                            |         |         |
+|   6|52,06|Resonance1                     |0~99                        |0~99     |1        |
+|   7|52,07|Harmonics1                     |1~16                        |0~15     |1        |
+|   8|52,08|Harmonics1 Mod Source          |[*3]                        |0~33     |1        |
+|   9|52,09|Harmonics1 Mod Int.            |-15~+15                     |-15~+15  |1        |
+|  10|52,0A|Frequency Fine1                |-99~+99                     |-99~+99  |1        |
+|  11|52,0B|Level1                         |0~99                        |0~99     |1        |
+|    |     |(BPF2)                         |                            |         |         |
+|  12|52,0C|Resonance2                     |0~99                        |0~99     |1        |
+|  13|52,0D|Harmonics2                     |1~16                        |0~15     |1        |
+|  14|52,0E|Harmonics2 Mod Source          |[*3]                        |0~33     |1        |
+|  15|52,0F|Harmonics2 Mod Int.            |-15~+15                     |-15~+15  |1        |
+|  16|52,10|Frequency Fine2                |-99~+99                     |-99~+99  |1        |
+|  17|52,11|Level2                         |0~99                        |0~99     |1        |
+|    |     |(BPF3)                         |                            |         |         |
+|  18|52,12|Resonance3                     |0~99                        |0~99     |1        |
+|  19|52,13|Harmonics3                     |1~16                        |0~15     |1        |
+|  20|52,14|Harmonics3 Mod Source          |[*3]                        |0~33     |1        |
+|  21|52,15|Harmonics3 Mod Int.            |-15~+15                     |-15~+15  |1        |
+|  22|52,16|Frequency Fine3                |-99~+99                     |-99~+99  |1        |
+|  23|52,17|Level3                         |0~99                        |0~99     |1        |
+|    |     |(BPF4)                         |                            |         |         |
+|  24|52,18|Resonance4                     |0~99                        |0~99     |1        |
+|  25|52,19|Harmonics4                     |1~16                        |0~15     |1        |
+|  26|52,1A|Harmonics4 Mod Source          |[*3]                        |0~33     |1        |
+|  27|52,1B|Harmonics4 Mod Int.            |-15~+15                     |-15~+15  |1        |
+|  28|52,1C|Frequency Fine4                |-99~+99                     |-99~+99  |1        |
+|  29|52,1D|Level4                         |0~99                        |0~99     |1        |
+|  30|52,1E|Resonance Mod Source           |[*3]                        |0~33     |1        |
+|  31|52,1F|Resonance Mod Int.             |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Ring Mod.OSC]                                                                  |
+|   0|53,00|Input Select                   |OSC1(2)/SubOSC/Noise        |0~4      |1        |
+|    |     |                               |/Filter1/Filter2            |         |         |
+|   1|53,01|Carrier Wave                   |SAW/SQU/TRI/SIN             |0~3      |1        |
+|   2|53,02|Modulation Depth               |0~99                        |0~99     |1        |
+|   3|53,03|Modulation Depth Mod1 Source   |[*3]                        |0~33     |1        |
+|   4|53,04|Modulation Depth Mod1 Int.     |-99~+99                     |-99~+99  |1        |
+|   5|53,05|Modulation Depth Mod2 Source   |[*3]                        |0~33     |1        |
+|   6|53,06|Modulation Depth Mod2 Int.     |-99~+99                     |-99~+99  |1        |
+|   7|53,07|Type                           |1/2                         |0/1      |1        |
+|   8|53,08|Wave Edge                      |0~99                        |0~99     |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Cross Mod.OSC]                                                                 |
+|   0|54,00|Input Select                   |OSC1(2)/SubOSC/Noise        |0~4      |1        |
+|    |     |                               |/Filter1/Filter2            |         |         |
+|   1|54,01|Carrier Wave                   |SAW/SQU/TRI/SIN             |0~3      |1        |
+|   2|54,02|Modulation Depth               |0~99                        |0~99     |1        |
+|   3|54,03|Modulation Depth Mod1 Source   |[*3]                        |0~33     |1        |
+|   4|54,04|Modulation Depth Mod1 Int.     |-99~+99                     |-99~+99  |1        |
+|   5|54,05|Modulation Depth Mod2 Source   |[*3]                        |0~33     |1        |
+|   6|54,06|Modulation Depth Mod2 Int.     |-99~+99                     |-99~+99  |1        |
+|   7|54,07|Wave Edge                      |0~99                        |0~99     |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Sync OSC]                                                                      |
+|   0|55,00|Input Select                   |OSC1(2)/SubOSC/Noise        |0~4      |1        |
+|    |     |                               |/Filter1/Filter2            |         |         |
+|   1|55,01|Slave Wave                     |SAW/SQU/TRI/SIN             |0~3      |1        |
+|   2|55,02|Wave Edge                      |0~99                        |0~99     |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Organ Model]                                                                   |
+|   0|56,00|(Drawbar1)                     |                            |         |         |
+|   1|56,01|Wave                           |SIN1/SIN2/SIN3/TRI          |0~3      |1        |
+|   2|56,02|Harmonics                      |1~16                        |0~15     |1        |
+|   3|56,03|Fine                           |-99~+99                     |-99~+99  |1        |
+|   4|56,04|Level                          |0~99                        |0~99     |1        |
+|   5|56,05|Level Mod Source               |[*3]                        |0~33     |1        |
+|   6|56,06|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|   7|56,07|Percussion Level               |0~99                        |0~99     |1        |
+|    |     |(Drawbar2)                     |                            |         |         |
+|   8|56,08|Wave                           |SIN1/SIN2/SIN3/TRI          |0~3      |1        |
+|   9|56,09|Harmonics                      |1~16                        |0~15     |1        |
+|  10|56,10|Fine                           |-99~+99                     |-99~+99  |1        |
+|  11|56,11|Level                          |0~99                        |0~99     |1        |
+|  12|56,12|Level Mod Source               |[*3]                        |0~33     |1        |
+|  13|56,13|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|  14|56,14|Percussion Level               |0~99                        |0~99     |1        |
+|    |     |(Drawbar3)                     |                            |         |         |
+|  15|56,15|Wave                           |SIN1/SIN2/SIN3/TRI          |0~3      |1        |
+|  16|56,16|Harmonics                      |1~16                        |0~15     |1        |
+|  17|56,17|Fine                           |-99~+99                     |-99~+99  |1        |
+|  18|56,18|Level                          |0~99                        |0~99     |1        |
+|  19|56,19|Level Mod Source               |[*3]                        |0~33     |1        |
+|  20|56,20|Level Mod Int.                 |-99~+99                     |-99~+99  |1        |
+|  21|56,21|Percussion Level               |0~99                        |0~99     |1        |
+|    |     |(Percussion)                   |                            |         |         |
+|  22|56,22|Trigger Mode                   |SINGLE/MULTI                |0/1      |1        |
+|  23|56,23|Decay                          |0~99                        |0~99     |1        |
+|  24|56,24|Percussion Level Mod Source    |[*3]                        |0~33     |1        |
+|  25|56,25|Percussion Level Mod Int.      |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[E. Piano Model]                                                                |
+|    |     |(Hammer)                       |                            |         |         |
+|   0|57,00|Force                          |0~99                        |0~99     |1        |
+|   1|57,01|Force Velocity Curve           |OFF/0~99                    |-1/0~99  |1        |
+|   2|57,02|Width                          |0~99                        |0~99     |1        |
+|   3|57,03|Click Level                    |0~99                        |0~99     |1        |
+|    |     |(Tone Generator)               |                            |         |         |
+|   4|57,04|Decay                          |0~99                        |0~99     |1        |
+|   5|57,05|Release                        |0~99                        |0~99     |1        |
+|   6|57,06|Overtone Level                 |0~99                        |0~99     |1        |
+|   7|57,07|Overtone Freq                  |0~99                        |0~99     |1        |
+|   8|57,08|Overtone Decay                 |0~99                        |0~99     |1        |
+|    |     |(Pickup)                       |                            |         |         |
+|   9|57,09|Pickup Position                |0~99                        |0~99     |1        |
+|  10|57,0A|Pickup Position Mod Source     |[*3]                        |0~33     |1        |
+|  11|57,0B|Pickup Position Mod Int.       |-99~+99                     |-99~+99  |1        |
+|    |     |(Low EQ)                       |                            |         |         |
+|  12|57,0C|Low EQ Freq                    |0~49                        |0~49     |1        |
+|  13|57,0D|Low EQ Gain                    |-18~+18dB                   |-18~+18  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Brass Model]                                                                   |
+|   0|58,00|Instrument Type                |[*6]                        |0~5      |1        |
+|   1|58,01|Pitch Bend+                    |Smooth/Jump                 |0/1      |1(Bit0)  |
+|    |58,02|Pitch Bend-                    |Smooth/Jump                 |0/1      |^(Bit1)  |
+|   2|58,03|Pressure EG                    |EG1~EG4/A.EG                |1~5      |1        |
+|   3|58,04|Pressure EG Intensity          |-99~+99                     |-99~+99  |1        |
+|   4|58,05|Pressure Mod1 Source           |[*3]                        |0~33     |1        |
+|   5|58,06|Pressure Mod1 Int.             |-99~+99                     |-99~+99  |1        |
+|   6|58,07|Pressure Mod2 Source           |[*3]                        |0~33     |1        |
+|   7|58,08|Pressure Mod2 Int.             |-99~+99                     |-99~+99  |1        |
+|   8| --- |reserved                       |                            |         |1        |
+|   9|58,09|Lip Character                  |0~99                        |0~99     |1        |
+|  10|58,0A|Lip Character Mod Source       |[*3]                        |0~33     |1        |
+|  11|58,0B|Lip Character Mod Int.         |-99~+99                     |-99~+99  |1        |
+|  12| --- |reserved                       |                            |         |1        |
+|  13| --- |reserved                       |                            |         |1        |
+|  14| --- |reserved                       |                            |         |1        |
+|  15|58,0C|Bell Tone                      |0~99                        |0~99     |1        |
+|  16|58,0D|Bell Resonance                 |0~99                        |0~99     |1        |
+|  17|58,0E|Noise Level                    |0~99                        |0~99     |1        |
+|  18| --- |reserved                       |                            |         |1        |
+|  19| --- |reserved                       |                            |         |1        |
+|  20| --- |reserved                       |                            |         |1        |
+|  21| --- |reserved                       |                            |         |1        |
+|  22| --- |reserved                       |                            |         |1        |
+|  23| --- |reserved                       |                            |         |1        |
+|  24| --- |reserved                       |                            |         |1        |
+|  25| --- |reserved                       |                            |         |1        |
+|  26| --- |reserved                       |                            |         |1        |
+|  27| --- |reserved                       |                            |         |1        |
+|  28|58,0F|PEQ Freq                       |0~49                        |0~49     |1        |
+|  29|58,10|PEQ Q                          |0~29                        |0~29     |1        |
+|  30|58,11|PEQ Gain                       |-18~+18dB                   |-18~+18  |1        |
+|  31|58,12|Strength                       |0~99                        |0~99     |1        |
+|  32| --- |reserved                       |                            |         |1        |
+|  33| --- |reserved                       |                            |         |1        |
+|  34| --- |reserved                       |                            |         |1        |
+|  35| --- |reserved                       |                            |         |1        |
+|  36| --- |reserved                       |                            |         |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Reed Model]                                                                    |
+|   0|59,00|Instrument Type                |[*7]                        |0~16     |1        |
+|   1|59,01|Pitch Bend+                    |Smooth/Jump                 |0/1      |1(Bit0)  |
+|    |59,02|Pitch Bend-                    |Smooth/Jump                 |0/1      |^(Bit1)  |
+|   2|59,03|Pressure EG                    |EG1~EG4/A.EG                |1~5      |1        |
+|   3|59,04|Pressure EG Int.               |-99~+99                     |-99~+99  |1        |
+|   4|59,05|Pressure Mod1 Source           |[*3]                        |0~33     |1        |
+|   5|59,06|Pressure Mod1 Int.             |-99~+99                     |-99~+99  |1        |
+|   6|59,07|Pressure Mod2 Source           |[*3]                        |0~33     |1        |
+|   7|59,08|Pressure Mod2 Int.             |-99~+99                     |-99~+99  |1        |
+|   8| --- |reserved                       |                            |         |1        |
+|   9| --- |reserved                       |                            |         |1        |
+|  10| --- |reserved                       |                            |         |1        |
+|  11| --- |reserved                       |                            |         |1        |
+|  12| --- |reserved                       |                            |         |1        |
+|  13|59,09|Noise Level                    |0~99                        |0~99     |1        |
+|  14| --- |reserved                       |                            |         |1        |
+|  15| --- |reserved                       |                            |         |1        |
+|  16| --- |reserved                       |                            |         |1        |
+|  17| --- |reserved                       |                            |         |1        |
+|  18| --- |reserved                       |                            |         |1        |
+|  19| --- |reserved                       |                            |         |1        |
+|  20| --- |reserved                       |                            |         |1        |
+|  21| --- |reserved                       |                            |         |1        |
+|  22| --- |reserved                       |                            |         |1        |
+|  23| --- |reserved                       |                            |         |1        |
+|  24| --- |reserved                       |                            |         |1        |
+|  25| --- |reserved                       |                            |         |1        |
+|  26|59,0A|Reed Mod Source                |[*3]                        |0~33     |1        |
+|  27|59,0B|Reed Mod Int.                  |-99~+99                     |-99~+99  |1        |
+|  28|59,0C|HPF Fc                         |0~99                        |0~99     |1        |
+|  29|59,0D|HPF Resonance                  |0~99                        |0~99     |1        |
+|  30|59,0E|PEQ Freq                       |0~49                        |0~49     |1        |
+|  31|59,0F|PEQ Q                          |0~29                        |0~29     |1        |
+|  32|59,10|PEQ Gain                       |-18~+18dB                   |-18~+18  |1        |
+|  33| --- |reserved                       |                            |         |1        |
+|    |     |(Wave Shape)                   |                            |         |         |
+|  34|59,11|Offset                         |-99~+99                     |-99~+99  |1        |
+|  35|59,12|Table                          |Clip/Reso                   |0/1      |1(Bit7)  |
+|    |59,13|Shape                          |0~99                        |0~99     |^(Bit6~0)|
+|  36|59,14|Shape Mod Source               |[*3]                        |0~33     |1        |
+|  37|59,15|Shape Mod Int.                 |-99~+99                     |-99~+99  |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Plucked String Model]                                                          |
+|   0|5A,00|Attack Level                   |0~99                        |0~99     |1        |
+|   1|5A,01|Attack Level Velocity Cntrl    |-99~+99                     |-99~+99  |1        |
+|   2|5A,02|Attack Curve Up                |0~99                        |0~99     |1        |
+|   3|5A,03|Attack Curve Up Veloc Cntrl    |-99~+99                     |-99~+99  |1        |
+|   4|5A,04|Attack Curve Down              |0~99                        |0~99     |1        |
+|   5|5A,05|Attack Curve Down Veloc Cntrl  |-99~+99                     |-99~+99  |1        |
+|   6|5A,06|Attack Noise Level             |0~99                        |0~99     |1        |
+|   7|5A,07|Attack Noise Level Veloc Cntrl |-99~+99                     |-99~+99  |1        |
+|   8|5A,08|String Position                |0~99                        |0~99     |1        |
+|   9|5A,09|String Position Mod Source     |[*3]                        |0~33     |1        |
+|  10|5A,0A|String Position Mod Int.       |-99~+99                     |-99~+99  |1        |
+|  11|5A,0B|Dispersion                     |0~99                        |0~99     |1        |
+|  12|5A,0C|Dispersion Mod Source          |[*3]                        |0~33     |1        |
+|  13|5A,0D|Dispersion Mod Int.            |-99~+99                     |-99~+99  |1        |
+|  14|5A,0E|Damping                        |0~99                        |0~99     |1        |
+|  15|5A,0F|Damping Keyboard Track         |-99~+99                     |-99~+99  |1        |
+|  16|5A,10|Damping Mod Source             |[*3]                        |0~33     |1        |
+|  17|5A,11|Damping Mod Intensity          |-99~+99                     |-99~+99  |1        |
+|  18|5A,12|Decay                          |0~99                        |0~99     |1        |
+|  19|5A,13|Decay Keyboard Track           |-99~+99                     |-99~+99  |1        |
+|  20|5A,14|Release                        |0~99                        |0~99     |1        |
+|  21|5A,15|Harmonics Position             |0~99                        |0~99     |1        |
+|  22|5A,16|Harmonics Mod Source           |[*3]                        |0~33     |1        |
+|  23|5A,17|Harmonics Mod Int.             |-99~+99                     |-99~+99  |1        |
+|  24|5A,18|Pickup Switch                  |OFF/ON                      |0/1      |1        |
+|  25|5A,19|Pickup Position                |0~99                        |0~99     |1        |
+|  26|5A,1A|Pickup Position Mod Source     |[*3]                        |0~33     |1        |
+|  27|5A,1B|Pickup Position Mod Int.       |-99~+99                     |-99~+99  |1        |
+|  28|5A,1C|Low EQ Freq                    |0~49                        |0~49     |1        |
+|  29|5A,1D|Low EQ Gain                    |-18~+18dB                   |-18~+18  |1        |
+|  30|5A,1E|Low Boost                      |0~99                        |0~99     |1        |
++----+-----+-------------------------------+----------------------------+---------+---------+
+|    |     |[Bowed String Model]                                                            |
+|    |     |(Bow Speed)                    |                            |         |         |
+|   0|5B,00|Bow Speed EG                   |EG1~EG4/A.EG                |1~5      |1        |
+|   1|5B,01|Bow Speed EG Int.              |-99~+99                     |-99~+99  |1        |
+|   2|5B,02|Bow Speed Mod1 Source          |[*3]                        |0~33     |1        |
+|   3|5B,03|Bow Speed Mod1 Int.            |-99~+99                     |-99~+99  |1        |
+|   4|5B,04|Bow Speed Mod2 Source          |[*3]                        |0~33     |1        |
+|   5|5B,05|Bow Speed Mod2 Int.            |-99~+99                     |-99~+99  |1        |
+|   6|5B,06|Bow Differential               |OFF/ON                      |0/1      |1        |
+|    |     |(Pressure)                     |                            |         |         |
+|   7|5B,07|Pressure EG                    |EG1~EG4/A.EG                |1~5      |1        |
+|   8|5B,08|Pressure EG Int.               |-99~+99                     |-99~+99  |1        |
+|   9|5B,09|Pressure Mod Source            |[*3]                        |0~33     |1        |
+|  10|5B,0A|Pressure Mod Int.              |-99~+99                     |-99~+99  |1        |
+|  11|5B,0B|Rosin Amount                   |0~99                        |0~99     |1        |
+|    |     |(String Position)              |                            |         |         |
+|  12|5B,0C|String Position                |0~99                        |0~99     |1        |
+|  13|5B,0D|String Position Mod Source     |[*3]                        |0~33     |1        |
+|  14|5B,0E|String Position Mod Int.       |-99~+99                     |-99~+99  |1        |
+|    |     |(String Character)             |                            |         |         |
+|  15|5B,0F|Damping                        |0~99                        |0~99     |1        |
+|  16|5B,10|Damping Keyboard Trk Key       |C-1~G9                      |0~127    |1        |
+|  17|5B,11|Damping Keyboard Trk Low Int.  |-99~+99                     |-99~+99  |1        |
+|  18|5B,12|Damping Keyboard Trk High Int. |-99~+99                     |-99~+99  |1        |
+|  19|5B,13|Damping Mod Source             |[*3]                        |0~33     |1        |
+|  20|5B,14|Damping Mod Int.               |-99~+99                     |-99~+99  |1        |
+|  21|5B,15|Dispersion                     |0~99                        |0~99     |1        |
+|  22|5B,16|Dispersion Mod Source          |[*3]                        |0~33     |1        |
+|  23|5B,17|Dispersion Mod Int.            |-99~+99                     |-99~+99  |1        |
+|    |     |(Reflection)                   |                            |         |         |
+|  24|5B,18|Reflection                     |0~99                        |0~99     |1        |
+|  25|5B,19|Reflection Mod Source          |[*3]                        |0~33     |1        |
+|  26|5B,1A|Reflection Mod Int.            |-99~+99                     |-99~+99  |1        |
+|    |     |(PEQ)                          |                            |         |         |
+|  27|5B,1B|PEQ Freq                       |0~49                        |0~49     |1        |
+|  28|5B,1C|PEQ Q                          |0~29                        |0~29     |1        |
+|  29|5B,1D|PEQ Gain                       |-18dB~+18dB                 |-18~+18  |1        |
++====+=====+===============================+============================+=========+=========+
+
+[*1]:Please refer to PCM Program information described in Trinity Parameter Guide.
+
+[*2]:Retrigger Controller List          [*3]:Modulation Source List
++--+-------------------------------+    +--+-------------------------------+
+|ID|     Modulation Sources        |    |ID|      Modulation Sources       |
++--+-------------------------------+    +--+-------------------------------+
+| 0|Off                            |    | 0|Off                            |
+| 1|Velocity[Soft]                 |    | 1|EG1                            |
+| 2|Velocity[Medium]               |    | 2|EG2                            |
+| 3|Velocity[Hard]                 |    | 3|EG3                            |
+| 4|Note Number[Linear]            |    | 4|EG4                            |
+| 5|Note Number[Exp]               |    | 5|Amp EG                         |
+| 6|Note Split[High]               |    | 6|LFO1                           |
+| 7|Note Split[Low]                |    | 7|LFO2                           |
+| 8|After Touch                    |    | 8|LFO3                           |
+| 9|Joy Stick(X)                   |    | 9|LFO4                           |
+|10|Joy Stick(+Y)                  |    |10|Portamento                     |
+|11|Joy Stick(-Y)                  |    |11|Velocity[Soft]                 |
+|12|AfterTouch+JS(+Y)              |    |12|Velocity[Medium]               |
+|13|Ribbon (X)                     |    |13|Velocity[Hard]                 |
+|14|Ribbon (+X)                    |    |14|Note Number[Linear]            |
+|15|Ribbon (-X)                    |    |15|Note Number[Exp]               |
+|16|Ribbon (Z)                     |    |16|Note Split[High]               |
+|17|Foot Pedal(CC#04)              |    |17|Note Split[Low]                |
+|18|Value Slider(CC#18)            |    |18|After Touch                    |
+|19|MIDI(CC#19)                    |    |19|Joy Stick(X)                   |
+|20|SW1(CC#80)                     |    |20|Joy Stick(+Y)                  |
+|21|SW2(CC#81)                     |    |21|Joy Stick(-Y)                  |
+|22|Foot SW(CC#82)                 |    |22|AfterTouch+JS(+Y)              |
+|23|MIDI(CC#83)                    |    |23|Ribbon (X)                     |
++--+-------------------------------+    |24|Ribbon (+X)                    |
+                                        |25|Ribbon (-X)                    |
+                                        |26|Ribbon (Z)                     |
+                                        |27|Foot Pedal(CC#04)              |
+                                        |28|Value Slider(CC#18)            |
+                                        |29|MIDI(CC#19)                    |
+                                        |30|SW1(CC#80)                     |
+                                        |31|SW2(CC#81)                     |
+                                        |32|Foot SW(CC#82)                 |
+                                        |33|MIDI(CC#83)                    |
+                                        +--+-------------------------------+
+
+[*4]:LFO Wave Form                      [*5]:Oscillator Type
++--+-------------------------------+    +--+-------------------------------+
+|ID|            Name               |    |ID|            Name               |
++--+-------------------------------+    +--+-------------------------------+
+| 0|Triangle '0                    |    | 0|Standard OSC                   |
+| 1|Triangle '90                   |    | 1|Comb Filter OSC                |
+| 2|Tri Random                     |    | 2|VPM OSC                        |
+| 3|Sine                           |    | 3|Resonance OSC                  |
+| 4|Saw Up '0                      |    | 4|Ring Modulation OSC            |
+| 5|Saw Up '180                    |    | 5|Cross Modulation OSC           |
+| 6|Saw Down '0                    |    | 6|Sync OSC                       |
+| 7|Saw Down '180                  |    | 7|Organ Model                    |
+| 8|Square                         |    | 8|Electric Piano Model           |
+| 9|Random(S/H)                    |    | 9|Brass Model                    |
+|10|Random(Vector)                 |    |10|Reed Model                     |
+|11|Step Tri 4                     |    |11|Plucked String Model           |
+|12|Step Tri 6                     |    |12|Bowed String Model             |
+|13|Step Saw 4                     |    +--+-------------------------------+
+|14|Step Saw 6                     |      You can select upto 8:Electric
+|15|Exp Tri                        |     Piano Model for OSC2 Setting. Also,
+|16|Exp Saw Up                     |     please be careful that the number
+|17|Exp Saw Down                   |     starts from 1 in the TouchView
++--+-------------------------------+     display.
+
+[*6]:Brass Model Instrument Types       [*7]:Reed Model Instrument Types
++--+-------------------------------+    +--+-------------------------------+
+|ID|            Name               |    |ID|            Name               |
++--+-------------------------------+    +--+-------------------------------+
+| 0|Brass 1                        |    | 0|Hard Sax 1                     |
+| 1|Brass 2                        |    | 1|Hard Sax 2                     |
+| 2|Brass 3                        |    | 2|Hard Sax 3                     |
+| 3|Horn 1                         |    | 3|Soft Sax 1                     |
+| 4|Horn 2                         |    | 4|Soft Sax 2                     |
+| 5|ReedBrass                      |    | 5|DoubleReed 1                   |
++--+-------------------------------+    | 6|DoubleReed 2                   |
+                                        | 7|Bassoon                        |
+                                        | 8|Clarinet                       |
+                                        | 9|Flute 1                        |
+                                        |10|Flute 2                        |
+                                        |11|PanFlute                       |
+                                        |12|Ocarina                        |
+                                        |13|Shakuhachi                     |
+                                        |14|Harmonica 1                    |
+                                        |15|Harmonica 2                    |
+                                        |16|ReedSynth                      |
+                                        +--+-------------------------------+
+
+-Revision History-
+1.0    Dec.14 1998    Initial Release.
+
