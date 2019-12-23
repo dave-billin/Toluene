@@ -55,10 +55,10 @@ function transcode_jucer()
 
 build_projucer
 build_frut
-transcode_jucer "${_script_dir}/TR-Edit/TR-Edit.jucer"
+transcode_jucer "${_script_dir}/Toluene/Toluene.jucer"
 
 # Configure and build the application
-app_path="${_script_dir}/TR-Edit"
+app_path="${_script_dir}/Toluene"
 cd ${app_path}
 pwd
 mkdir -p build && cd build
