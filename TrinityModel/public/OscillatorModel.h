@@ -9,7 +9,11 @@
 #ifndef TOLUENE_KORGTRINITYMODEL_OSCILLATORMODEL_H_
 #define TOLUENE_KORGTRINITYMODEL_OSCILLATORMODEL_H_
 
+#include <cstdint>
+
 namespace KorgTrinity {
+
+class ModelBackend;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// A class encapsulating the model of a KORG Trinity oscillator
@@ -17,7 +21,8 @@ namespace KorgTrinity {
 class OscillatorModel {
 public:
 	/// Creates an instance of the object with default values
-	OscillatorModel();
+	/// @param backend  Reference to an object providing the model back-end
+	OscillatorModel( ModelBackend& backend );
 
 	/// Called when the object goes out of scope
 	virtual ~OscillatorModel();
@@ -25,7 +30,7 @@ public:
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	/// Valid oscillator modes
-	enum OscillatorMode : class uint8_t
+	enum OscillatorMode : uint8_t
 	{
 		Single = 0,
 		Double = 1,
@@ -52,7 +57,7 @@ public:
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	/// Key assign modes
-	enum KeyAssignMode : class uint8_t
+	enum KeyAssignMode : uint8_t
 	{
 		Poly = 0,
 		Mono = 1
@@ -80,7 +85,7 @@ public:
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	/// Key priority modes
-	enum KeyPriorityMode : class uint8_t
+	enum KeyPriorityMode : uint8_t
 	{
 		LowPriority  = 0,
 		HighPriority = 1,
@@ -99,7 +104,7 @@ public:
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	/// Poly assign modes
-	enum PolyAssignMode : class uint8_t
+	enum PolyAssignMode : uint8_t
 	{
 		NormalPolyAssign = 0,
 		PianoPolyAssign  = 1

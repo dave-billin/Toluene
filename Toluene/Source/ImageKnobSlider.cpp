@@ -1,29 +1,37 @@
 /*
   ==============================================================================
 
-    MainComponent.cpp
-    Created: 17 Dec 2019 8:56:54am
+    ImageKnobSlider.cpp
+    Created: 15 Apr 2020 9:02:49am
     Author:  dave
 
   ==============================================================================
 */
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "MainComponent.h"
+#include "ImageKnobSlider.h"
 
 //==============================================================================
-MainComponent::MainComponent()
+ImageKnobSlider::ImageKnobSlider()
+  : Slider( Slider::SliderStyle::RotaryHorizontalVerticalDrag,
+            Slider::TextEntryBoxPosition::TextBoxBelow )
+{
+}
+
+//==============================================================================
+ImageKnobSlider::ImageKnobSlider( ImageKnobSliderStyle style, Slider::TextEntryBoxPosition position )
+  : Slider( static_cast<Slider::SliderStyle>(style), position )
 {
     // In your constructor, you should add any child components, and
     // initialise any special settings that your component needs.
 
 }
 
-MainComponent::~MainComponent()
+ImageKnobSlider::~ImageKnobSlider()
 {
 }
 
-void MainComponent::paint (Graphics& g)
+void ImageKnobSlider::paint (Graphics& g)
 {
     /* This demo code just fills the component's background and
        draws some placeholder text to get you started.
@@ -39,11 +47,11 @@ void MainComponent::paint (Graphics& g)
 
     g.setColour (Colours::white);
     g.setFont (14.0f);
-    g.drawText ("MainComponent", getLocalBounds(),
+    g.drawText ("ImageKnobSlider", getLocalBounds(),
                 Justification::centred, true);   // draw some placeholder text
 }
 
-void MainComponent::resized()
+void ImageKnobSlider::resized()
 {
     // This method is where you should set the bounds of any child
     // components that your component contains..

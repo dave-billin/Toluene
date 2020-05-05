@@ -10,12 +10,14 @@
 
 namespace KorgTrinity {
 
-OscillatorModel::OscillatorModel() {
+OscillatorModel::OscillatorModel( ModelBackend& backend )
+{
 	// TODO Auto-generated constructor stub
 
 }
 
-OscillatorModel::~OscillatorModel() {
+OscillatorModel::~OscillatorModel()
+{
 	// TODO Auto-generated destructor stub
 }
 

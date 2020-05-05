@@ -1,8 +1,11 @@
-build/*
-TR-Edit/build
+build/
 **.swp
 Toluene/CMakeLists.txt
-Toluene/build/
+
+# The following directories are external code
+# imported using CMake, so we ignore them
+JUCE/
+FRUT/
 
 # Eclipse files
 .project

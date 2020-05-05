@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="kNB5tk" name="Toluene" projectType="guiapp" jucerVersion="5.4.5">
-  <MAINGROUP id="gzUyrK" name="Toluene">
+<JUCERPROJECT id="kNB5tk" name="TolueneEditor" projectType="guiapp" jucerVersion="5.4.7">
+  <MAINGROUP id="gzUyrK" name="TolueneEditor">
     <GROUP id="{F2EA308B-F8FC-4E38-1F66-6824AC52EAD5}" name="Source">
+      <FILE id="OEaaQJ" name="CustomWidgetTestTabComponent.cpp" compile="1"
+            resource="0" file="Source/CustomWidgetTestTabComponent.cpp"/>
+      <FILE id="BJzd2u" name="CustomWidgetTestTabComponent.h" compile="0"
+            resource="0" file="Source/CustomWidgetTestTabComponent.h"/>
+      <FILE id="onnjkT" name="ImageKnobSlider.cpp" compile="1" resource="0"
+            file="Source/ImageKnobSlider.cpp"/>
+      <FILE id="MyRKbi" name="ImageKnobSlider.h" compile="0" resource="0"
+            file="Source/ImageKnobSlider.h"/>
       <FILE id="lVwa3S" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
-      <FILE id="CuXgyx" name="MainComponent.cpp" compile="1" resource="0"
-            file="Source/MainComponent.cpp"/>
-      <FILE id="a0WO2K" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="SEk1qe" name="MainWindowComponent.cpp" compile="1" resource="0"
+            file="Source/MainWindowComponent.cpp"/>
+      <FILE id="dXj7Gi" name="MainWindowComponent.h" compile="0" resource="0"
+            file="Source/MainWindowComponent.h"/>
+      <FILE id="VxnlBb" name="OscEditGroup.cpp" compile="1" resource="0"
+            file="Source/OscEditGroup.cpp"/>
+      <FILE id="W5RpQz" name="OscEditGroup.h" compile="0" resource="0" file="Source/OscEditGroup.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

@@ -9,7 +9,7 @@
 */
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "MainComponent.h"
+#include "MainWindowComponent.h"
 
 //==============================================================================
 class TolueneApplication  : public JUCEApplication
@@ -66,7 +66,7 @@ public:
                                                     DocumentWindow::allButtons)
         {
             setUsingNativeTitleBar (true);
-            setContentOwned (new MainComponent(), true);
+            setContentOwned (new MainWindowComponent(), true);
 
            #if JUCE_IOS || JUCE_ANDROID
             setFullScreen (true);
