@@ -1,15 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="kNB5tk" name="TolueneEditor" projectType="guiapp" jucerVersion="5.4.7">
+<JUCERPROJECT id="kNB5tk" name="TolueneEditor" projectType="guiapp" jucerVersion="5.4.7"
+              binaryDataNamespace="BinaryData">
   <MAINGROUP id="gzUyrK" name="TolueneEditor">
     <GROUP id="{F2EA308B-F8FC-4E38-1F66-6824AC52EAD5}" name="Source">
+      <FILE id="a3QRU3" name="ClockwiseCyanKnobImageArray.cpp" compile="1"
+            resource="0" file="Source/ClockwiseCyanKnobImageArray.cpp"/>
+      <FILE id="kweiRU" name="ClockwiseCyanKnobImageArray.h" compile="0"
+            resource="0" file="Source/ClockwiseCyanKnobImageArray.h"/>
       <FILE id="OEaaQJ" name="CustomWidgetTestTabComponent.cpp" compile="1"
             resource="0" file="Source/CustomWidgetTestTabComponent.cpp"/>
       <FILE id="BJzd2u" name="CustomWidgetTestTabComponent.h" compile="0"
             resource="0" file="Source/CustomWidgetTestTabComponent.h"/>
-      <FILE id="onnjkT" name="ImageKnobSlider.cpp" compile="1" resource="0"
+      <FILE id="HAwL0W" name="ImageFrameArray.h" compile="0" resource="0"
+            file="Source/ImageFrameArray.h"/>
+      <FILE id="KDn4lG" name="ImageKnobSlider.cpp" compile="1" resource="0"
             file="Source/ImageKnobSlider.cpp"/>
-      <FILE id="MyRKbi" name="ImageKnobSlider.h" compile="0" resource="0"
+      <FILE id="U4EdXC" name="ImageKnobSlider.h" compile="0" resource="0"
             file="Source/ImageKnobSlider.h"/>
       <FILE id="lVwa3S" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="SEk1qe" name="MainWindowComponent.cpp" compile="1" resource="0"

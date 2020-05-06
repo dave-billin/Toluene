@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.4.5
+  Created with Projucer version: 5.4.7
 
   ------------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ class CustomWidgetTestTabComponent  : public Component
 public:
     //==============================================================================
     CustomWidgetTestTabComponent ();
-    ~CustomWidgetTestTabComponent();
+    ~CustomWidgetTestTabComponent() override;
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
@@ -56,7 +56,7 @@ private:
     //[/UserVariables]
 
     //==============================================================================
-    std::unique_ptr<ImageKnobSlider> component;
+    std::unique_ptr<ImageKnobSlider> sld_testSlider;
 
 
     //==============================================================================

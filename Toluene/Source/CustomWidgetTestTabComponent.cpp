@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.4.5
+  Created with Projucer version: 5.4.7
 
   ------------------------------------------------------------------------------
 
@@ -19,6 +19,7 @@
 
 //[Headers] You can add your own extra header files here...
 #include "ImageKnobSlider.h"
+#include "ClockwiseCyanKnobImageArray.h"
 //[/Headers]
 
 #include "CustomWidgetTestTabComponent.h"
@@ -33,14 +34,22 @@ CustomWidgetTestTabComponent::CustomWidgetTestTabComponent ()
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
 
-    component.reset (new ImageKnobSlider());
-    addAndMakeVisible (component.get());
-    component->setName ("new component");
+    sld_testSlider.reset (new ImageKnobSlider (std::unique_ptr<ImageFrameArray>( new ClockwiseCyanKnobImageArray )));
+    addAndMakeVisible (sld_testSlider.get());
+    sld_testSlider->setName ("test slider");
 
-    component->setBounds (16, 8, 88, 72);
+    sld_testSlider->setBounds (16, 8, 120, 120);
 
 
     //[UserPreSize]
+    sld_testSlider->setRange(0,   // Min
+                             127, // Max
+                             1 ); // Interval
+    sld_testSlider->setSliderStyle (Slider::RotaryVerticalDrag);
+    sld_testSlider->setTextBoxStyle ( Slider::TextEntryBoxPosition::TextBoxBelow,
+                                      true,     // isReadOnly
+                                      40,       // textEntryBoxWidth,
+                                      20 );     // textEntryBoxHeight
     //[/UserPreSize]
 
     setSize (600, 400);
@@ -55,7 +64,7 @@ CustomWidgetTestTabComponent::~CustomWidgetTestTabComponent()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-    component = nullptr;
+    sld_testSlider = nullptr;
 
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -103,9 +112,9 @@ BEGIN_JUCER_METADATA
                  variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
                  overlayOpacity="0.330" fixedSize="0" initialWidth="600" initialHeight="400">
   <BACKGROUND backgroundColour="ff323e44"/>
-  <GENERICCOMPONENT name="new component" id="aa353092b1e12124" memberName="component"
-                    virtualName="" explicitFocusOrder="0" pos="16 8 88 72" class="ImageKnobSlider"
-                    params=""/>
+  <GENERICCOMPONENT name="test slider" id="aa353092b1e12124" memberName="sld_testSlider"
+                    virtualName="" explicitFocusOrder="0" pos="16 8 120 120" class="ImageKnobSlider"
+                    params="std::unique_ptr&lt;ImageFrameArray&gt;( new ClockwiseCyanKnobImageArray )"/>
 </JUCER_COMPONENT>
 
 END_JUCER_METADATA

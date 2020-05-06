@@ -1,59 +1,56 @@
-/*
-  ==============================================================================
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file
+///
+/// @author Dave Billin
+///
+/// Copyright 2020 XS Noise Productions, Inc.
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    ImageKnobSlider.cpp
-    Created: 15 Apr 2020 9:02:49am
-    Author:  dave
-
-  ==============================================================================
-*/
-
-#include "../JuceLibraryCode/JuceHeader.h"
 #include "ImageKnobSlider.h"
 
-//==============================================================================
-ImageKnobSlider::ImageKnobSlider()
-  : Slider( Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-            Slider::TextEntryBoxPosition::TextBoxBelow )
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+ImageKnobSlider::ImageKnobSlider (std::unique_ptr<ImageFrameArray> imageArray)
+  : m_imageArray( std::move(imageArray) )
 {
 }
 
-//==============================================================================
-ImageKnobSlider::ImageKnobSlider( ImageKnobSliderStyle style, Slider::TextEntryBoxPosition position )
-  : Slider( static_cast<Slider::SliderStyle>(style), position )
-{
-    // In your constructor, you should add any child components, and
-    // initialise any special settings that your component needs.
-
-}
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 ImageKnobSlider::~ImageKnobSlider()
 {
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void ImageKnobSlider::paint (Graphics& g)
 {
-    /* This demo code just fills the component's background and
-       draws some placeholder text to get you started.
+    Image knobImage = m_imageArray->getImage();
 
-       You should replace everything in this method with your own
-       drawing code..
-    */
+	// Calculate the value of the slider normalized to a range of 0.0 to 1.0
+    double const currentValue = getValue();
+    double const valueRange = getMaximum() - getMinimum();
+    double const normValue = (valueRange != 0.0) ? (currentValue - getMinimum()) / valueRange : 0.0;
 
-    g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));   // clear the background
+    int const numFrames = m_imageArray->getNumFrames();
+    int const frameWidth = m_imageArray->getFrameWidth();
+    int const frameHeight = m_imageArray->getFrameHeight();
 
-    g.setColour (Colours::grey);
-    g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
+	// Calculate the index of the current frame
+    int frameIndex = static_cast<int>(ceil(normValue * numFrames)) - 1;
+    frameIndex = (frameIndex < 0) ? 0 : frameIndex;
+    jassert(frameIndex <= numFrames);
 
-    g.setColour (Colours::white);
-    g.setFont (14.0f);
-    g.drawText ("ImageKnobSlider", getLocalBounds(),
-                Justification::centred, true);   // draw some placeholder text
-}
+    int const sourceX = m_imageArray->isHorizontalArray() ? (frameIndex * frameWidth) : 0;
+    int const sourceY = m_imageArray->isHorizontalArray() ? 0 : (frameIndex * frameHeight);
 
-void ImageKnobSlider::resized()
-{
-    // This method is where you should set the bounds of any child
-    // components that your component contains..
-
+	g.drawImage(knobImage,
+	            0,           // the left of the destination rectangle
+	            0,           // the top of the destination rectangle
+	            getWidth(),  // the width of the destination rectangle
+	            getHeight(), // the height of the destination rectangle
+	            sourceX,     // the left of the rectangle to copy from the source image
+	            sourceY,     // the top of the rectangle to copy from the source image
+	            frameWidth,  // the width of the rectangle to copy from the source image
+	            frameHeight, // the height of the rectangle to copy from the source image
+	            false );
 }
