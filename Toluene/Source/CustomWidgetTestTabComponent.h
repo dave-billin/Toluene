@@ -56,7 +56,9 @@ private:
     //[/UserVariables]
 
     //==============================================================================
-    std::unique_ptr<ImageKnobSlider> sld_testSlider;
+    std::unique_ptr<ImageKnobSlider> sld_testSliderCyan;
+    std::unique_ptr<ImageKnobSlider> sld_testSliderIndigo;
+    std::unique_ptr<ImageKnobSlider> sld_testSliderRed;
 
 
     //==============================================================================

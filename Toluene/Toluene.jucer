@@ -4,20 +4,18 @@
               binaryDataNamespace="BinaryData">
   <MAINGROUP id="gzUyrK" name="TolueneEditor">
     <GROUP id="{F2EA308B-F8FC-4E38-1F66-6824AC52EAD5}" name="Source">
-      <FILE id="a3QRU3" name="ClockwiseCyanKnobImageArray.cpp" compile="1"
-            resource="0" file="Source/ClockwiseCyanKnobImageArray.cpp"/>
-      <FILE id="kweiRU" name="ClockwiseCyanKnobImageArray.h" compile="0"
-            resource="0" file="Source/ClockwiseCyanKnobImageArray.h"/>
       <FILE id="OEaaQJ" name="CustomWidgetTestTabComponent.cpp" compile="1"
             resource="0" file="Source/CustomWidgetTestTabComponent.cpp"/>
       <FILE id="BJzd2u" name="CustomWidgetTestTabComponent.h" compile="0"
             resource="0" file="Source/CustomWidgetTestTabComponent.h"/>
-      <FILE id="HAwL0W" name="ImageFrameArray.h" compile="0" resource="0"
-            file="Source/ImageFrameArray.h"/>
-      <FILE id="KDn4lG" name="ImageKnobSlider.cpp" compile="1" resource="0"
+      <FILE id="AVLBMM" name="ImageKnobSlider.cpp" compile="1" resource="0"
             file="Source/ImageKnobSlider.cpp"/>
-      <FILE id="U4EdXC" name="ImageKnobSlider.h" compile="0" resource="0"
+      <FILE id="HEzlNp" name="ImageKnobSlider.h" compile="0" resource="0"
             file="Source/ImageKnobSlider.h"/>
+      <FILE id="keO3H0" name="KitKnobImageArrays.cpp" compile="1" resource="0"
+            file="Source/KitKnobImageArrays.cpp"/>
+      <FILE id="DOj5XI" name="KitKnobImageArrays.h" compile="0" resource="0"
+            file="Source/KitKnobImageArrays.h"/>
       <FILE id="lVwa3S" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="SEk1qe" name="MainWindowComponent.cpp" compile="1" resource="0"
             file="Source/MainWindowComponent.cpp"/>
